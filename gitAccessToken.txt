@@ -1,0 +1,14 @@
+gAccessToken:
+lpat-Pr9nd8476NQgVwT4Py8K
+
+
+Deploy Token:
+user:
+gitlab+deploy-token-145
+token:
+gldt-H7XyvvEBeZ__GuDzS1ZB
+
+
+registry.gitlab.galvanize.com/cohorts/ent/sf/ase-tier3-06-24-2024/student-work/steve-hilgenberg/simple-autos-steveh:latest
+
+

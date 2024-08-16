@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sh-autos-service
+  namespace: default
+  labels:
+    app: sh-simple-autos
+spec:
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      name: "http"
+  selector:
+    app: sh-simple-autos

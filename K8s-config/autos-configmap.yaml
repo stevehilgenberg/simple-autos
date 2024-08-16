@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sh-autos-configmap
+  namespace: default
+data:
+  DB_HOST: "postgres.galvanizelabs.net"
+  DB_PORT: "5432"
+  DB_NAME: "steve_hilgenberg_db"
+  DB_USER: DB_USER
+  DB_PWD: DB_PWD

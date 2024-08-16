@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sh-autos-deployment
+  namespace: default
+  labels:
+    app: sh-simple-autos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sh-simple-autos
+  template:
+    metadata:
+      labels:
+        app: sh-simple-autos
+    spec:
+      containers:
+#        - image: registry.gitlab.galvanize.com/cohorts/ent/sf/ase-tier3-06-24-2024/student-work/steve-hilgenberg/simple-autos-steveh:latest
+        - image: $IMAGE
+          name: sh-simple-autos
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: sh-autos-configmap
+            - secretRef:
+                name: sh-autos-secret
+      imagePullSecrets:
+        - name: sh-simple-autos-token

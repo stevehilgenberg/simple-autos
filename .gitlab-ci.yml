@@ -1,0 +1,91 @@
+stages:
+  - build
+  - test
+  - docker
+  - deploy
+
+before_script:
+  - GRADLE_USER_HOME="$(pwd)/.gradle"
+  - export GRADLE_USER_HOME
+
+build-job:
+  image: eclipse-temurin:17-alpine
+  stage: build
+  script:
+    - ./gradlew build
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: push
+    paths:
+      - build/**
+      - .gradle
+  artifacts:
+    untracked: false
+    when: on_success
+    access: all
+    expire_in: 30 days
+    paths:
+      - build/libs/*.jar
+
+test-job:
+  image: eclipse-temurin:17-alpine
+  stage: test
+  script:
+    - ./gradlew test
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - build/**
+      - .gradle
+  artifacts:
+    untracked: false
+    when: on_failure
+    access: all
+    expire_in: 30 days
+    paths:
+      - build/reports/tests
+
+docker:
+  stage: docker
+  needs:
+    - build-job
+    - test-job
+  image:
+    name: gcr.io/kaniko-project/executor:v1.15.0-debug
+    entrypoint: [""]
+  script:
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "${CI_REGISTRY_IMAGE}:$CI_PIPELINE_IID"
+      --destination "${CI_REGISTRY_IMAGE}:latest"
+      --cleanup
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - build/**
+      - .gradle
+
+deploy:
+  stage: deploy
+  image: $BASE_AWS_EKS_IMAGE
+  when: manual
+  only:
+    refs: 
+      - main
+      - master
+  before_script:
+    - export IMAGE="$CI_REGISTRY_IMAGE":"$CI_PIPELINE_IID"
+    - aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
+    - aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
+    - aws configure set region $AWS_DEFAULT_REGION
+    - aws configure set output json
+    - aws eks update-kubeconfig --name "$CLUSTER_NAME"
+    - aws sts get-caller-identity
+  script:
+    - kubectl apply -f K8s-config/autos-configmap.yaml
+    - kubectl apply -f K8s-config/autos-secret.yaml
+    - kubectl apply -f K8s-config/autos-service.yaml
+    - envsubst < K8s-config/autos-deployment.yaml | kubectl apply -f -
